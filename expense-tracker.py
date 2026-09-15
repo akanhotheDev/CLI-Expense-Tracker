@@ -1,69 +1,96 @@
-## A CLI Based Expnese Tracker
 import json
 import os
 
 fileName = "Expense.json"
 
 
-def add_expense(filepath, expense):
-    # check if th file exist and load exist data
+def load_expense(filepath):
     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-        with open(filepath, "r") as e:
-            expenses = json.load(e)
-            if not isinstance(expenses, list):
-                expenses = [expenses]
+        with open(filepath, "r") as f:
+            expenses = json.load(f)
     else:
-         expenses = []
+        expenses = []
+    return expenses
 
-    # expenses = []
 
+def add_expense(filepath, expense):
+    expenses = load_expense(filepath)
     expenses.append(expense)
-
     with open(filepath, "w") as f:
-        json.dump(expenses, f, indent = 3)
+        json.dump(expenses, f, indent=4)
+    return expenses
 
-def load_expense():
-    # expenses = []
 
-    with open(fileName, 'r') as f:
-        return json.load(f)
-    
+def save_expenses(filepath, expenses):
+    with open(filepath, "w") as f:
+        json.dump(expenses, f, indent=4)
 
 
 def Expense_Tracker():
     while True:
-        status = input("Add an (more) expense? (y/n)(yes/no) or delete one\n").lower()
-        if status == "n" or status == "no":
-            break
-        elif status == "y" or status == "yes":
-            ctgry = input("What's the category of your expense?\n")
-            try:
-                amnt = int(input("What was/is the anount?\n"))
-            except ValueError:
-                return "Please provide an Integer"
-            desc = input("The description?\n")
+        print("1. View existing expense\n2. Add an expense\n3. Calculate total expense\n4. Calculate by category\n5. Delete expense\n6. Exit")
+        status = input("Choose your option:\n")
+
+        if status == "1":
+            expenses = load_expense(fileName)
+            if len(expenses) == 0:
+                print("You don't have any expense yet")
+            else:
+                for expense in expenses:
+                    print(f"ID: {expense['id']}")
+                    print(f"amount: {expense['amount']}")
+                    print(f"category: {expense['category']}")
+                    print(f"description: {expense['description']}")
+                    print("-" * 20)
+
+        elif status == "2":
+            ctgry = input("What is the category of the expense: ")
+            amnt = int(input("amount of expense: "))
+            desc = input("description of expense: ")
+
+            expenses = load_expense(fileName)
+            new_id = max((e["id"] for e in expenses), default=0) + 1
+
             expense = {
+                "id": new_id,
                 "amount": amnt,
                 "category": ctgry,
                 "description": desc
-            }    
+            }
+
             add_expense(fileName, expense)
-            expenselist = load_expense()
-            total = sum(costs["amount"] for costs in expenselist)
-            with open ("totalxpense.json", "w") as t:
-                json.dump(total, t)
-                    
-        else: 
-            return "Command not recongnised"
-            
-        
+            print("Expense added.")
+        elif status == "3":
+            expenses = load_expense(fileName)
+            total = sum(cost["amount"] for cost in expenses)
+            print(f"Total: {total}")
+
+        elif status == "4":
+            expenses = load_expense(fileName)
+            cat = input("Type category: ").strip()
+            total = 0
+            for cost in expenses:
+                if cost["category"] == cat:
+                    total += cost["amount"]
+            print(f"Total for {cat}: {total}")
+
+        elif status == "5":
+            expenses = load_expense(fileName)
+            stat = int(input("specify expense id: "))
+            new_expenses = [e for e in expenses if e["id"] != stat]
+
+            if len(new_expenses) == len(expenses):
+                print("No expense found with that id.")
+            else:
+                save_expenses(fileName, new_expenses)
+                print("Expense deleted.")
+
+        elif status == "6":
+            print("Goodbye for now")
+            break
+
+        else:
+            print("Command not recognised")
 
 
-
-
-   
-    
-       
-
-test = Expense_Tracker()
-print(test)
+Expense_Tracker()
